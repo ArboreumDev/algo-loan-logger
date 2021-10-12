@@ -1,6 +1,7 @@
-from pydantic import BaseModel
 from typing import Dict
+
 from humps import camelize
+from pydantic import BaseModel
 
 
 def to_camel(string):
@@ -22,17 +23,17 @@ class Transaction(BaseModel):
 
 
 class Asset(BaseModel):
-    sender:str
-    asset_name:str
-    unit:str
-    total:int
-    default_frozen:bool
-    decimals:int
-    url:str
-    manager:str
-    reserve:str
-    freeze:str
-    clawback:str
+    sender: str
+    asset_name: str
+    unit: str
+    total: int
+    default_frozen: bool
+    decimals: int
+    url: str
+    manager: str
+    reserve: str
+    freeze: str
+    clawback: str
     passphrase: str
 
 
@@ -64,6 +65,7 @@ class NewLogAssetInput(CamelModel):
     asset_name: str
     loan_params: NewLoanParams
 
+
 class LogData(CamelModel):
     input: Dict
 
@@ -78,4 +80,3 @@ class BaseException(Exception):
 
 class InvalidAssetIDException(BaseException):
     pass
-
