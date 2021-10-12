@@ -37,6 +37,6 @@ def _create_new_asset_log_entry(
 # @algorand_app.post("/log/{assetId}/close", tags=['log'])
 
 
-@algorand_app.get("/log/{assetId}", response_model=List[Dict], tags=["log"])
-def _get_asset_logs(assetId: int, algo: AlgoService = Depends(get_algo_service)):
+@algorand_app.get("/log/{asset_id}", response_model=List[Dict], tags=["log"])
+def _get_asset_logs(asset_id: int, algo: AlgoService = Depends(get_algo_service)):
     return []
