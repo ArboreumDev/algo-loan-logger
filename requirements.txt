@@ -1,3 +1,4 @@
+argon2-cffi==20.1.0
 httptools==0.1.1 
 fastapi==0.55.1
 requests==2.24.0

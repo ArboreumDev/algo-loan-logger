@@ -1,24 +1,31 @@
 # from utils.logger import get_logger
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from routes.v1.algorand import algorand_app
+from starlette.status import HTTP_401_UNAUTHORIZED
+from fastapi.security import OAuth2PasswordBearer
+from argon2 import PasswordHasher
+from dotenv import load_dotenv
+import os
 
-# from starlette.status import HTTP_401_UNAUTHORIZED
-# from fastapi.middleware.cors import CORSMiddleware
+load_dotenv()
 
-# from utils.common import JWTUser
-# from utils.constant import TOKEN_DESCRIPTION, FRONTEND_URL
-# from utils.security import authenticate_user, create_jwt_token, check_jwt_token_role
-# from sqlalchemy.orm import Session
-# from routes.dependencies import log_request
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
 
+async def check_authorization(token: str = Depends(oauth2_scheme)):
+    try:
+        ph = PasswordHasher()
+        ph.verify(os.getenv("HASHED_API_SECRET"), token)
+    except Exception:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid password")
+
+
+app = FastAPI()
+
+app.include_router(algorand_app, prefix="/v1", dependencies=[Depends(check_authorization)])
 
 # origins = [
 #     FRONTEND_URL
 # ]
-app = FastAPI()
-
-app.include_router(algorand_app, prefix="/v1", dependencies=[])
-
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=origins,
@@ -26,6 +33,7 @@ app.include_router(algorand_app, prefix="/v1", dependencies=[])
 #     allow_methods=["*"],
 #     allow_headers=["*"],
 # )
+
 
 
 @app.get("/", tags=["health"])

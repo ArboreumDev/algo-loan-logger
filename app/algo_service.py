@@ -112,10 +112,11 @@ class AlgoService:
         return wait_for_confirmation(self.algod_client, txid)
 
 
-def get_algo_client(net=".env"):
+def get_algo_client(node=".env-defined"):
     """
     helper function to initiate algoclient to different kinds of algorand nodes:
-    - whatever ALGORAND_ENVIRONMENT is set to in .env (DEFAULT)
+    - '.env-defined': whatever ALGORAND_ENVIRONMENT is set to in (DEFAULT)
+    - '.env': whatever values are set in .env
     - or one of
         - "TESTNET" (public), via node on purestake API
         - "MAINNET" (public), TODO
@@ -123,18 +124,18 @@ def get_algo_client(net=".env"):
         - "SANDBOX" docker container
     """
     connect_to = ""
-    if net == ".env":
-        connect_to = os.getenv("ALGORAND_ENVIRONMENT")
-
-        algod_address = os.getenv("ALGORAND_ALGOD_ADDRESS")
+    if node == ".env":
         algod_address = os.getenv("ALGORAND_ALGOD_ADDRESS")
         algod_token = os.getenv("ALGORAND_ALGOD_TOKEN")
         indexer_address = os.getenv("ALGORAND_INDEXER_ADDRESS")
-        indexer_token = os.getenv("ALGORAND_ALGOD_TOKEN")
+        indexer_token = os.getenv("ALGORAND_INDEXER_TOKEN")
         master_mnemonic = os.getenv("MASTER_MNEMONIC")
         return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic)
+
+    if node == ".env-defined":
+        connect_to = os.getenv("ALGORAND_ENVIRONMENT")
     else:
-        connect_to = net
+        connect_to = node
 
     # default config for algorand services
     algod_address = "http://localhost:4001"
@@ -166,5 +167,8 @@ def get_algo_client(net=".env"):
 
         return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic)
 
+    elif connect_to == "MAINNET":
+        raise NotImplementedError("mainnet not configured yet")
+
     else:
-        raise NotImplementedError(f"blockchain {net} unknown")
+        raise NotImplementedError(f"blockchain {node} unknown")

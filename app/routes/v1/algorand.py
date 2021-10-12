@@ -1,8 +1,11 @@
 from typing import Dict, List
 
 from algo_service import AlgoService, get_algo_client
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, HTTPException
 from utils.types import CamelModel, LogData, NewLoanParams
+from starlette.status import HTTP_401_UNAUTHORIZED
+
+
 
 algorand_app = APIRouter()
 
@@ -13,11 +16,11 @@ class NewAssetResponse(CamelModel):
 
 
 def get_algo_service():
-    return get_algo_client(net=".env")
+    return get_algo_client(node=".env")
 
 
 @algorand_app.post("/log/new", response_model=NewAssetResponse, tags=["log"])
-def _create_new_asset(loanParams: NewLoanParams, algo: AlgoService = Depends(get_algo_client)):
+def _create_new_asset( loanParams: NewLoanParams, algo: AlgoService = Depends(get_algo_service)):
     return algo.create_new_asset(loanParams)
 
 
@@ -25,7 +28,7 @@ def _create_new_asset(loanParams: NewLoanParams, algo: AlgoService = Depends(get
 def _create_new_asset_log_entry(
     asset_id: int,
     log_data: LogData = Body(..., embed=True),
-    algo: AlgoService = Depends(get_algo_client),
+    algo: AlgoService = Depends(get_algo_service),
 ):
     return algo.asset_tx_with_log(asset_id, log_data)
 
@@ -35,5 +38,5 @@ def _create_new_asset_log_entry(
 
 
 @algorand_app.get("/log/{assetId}", response_model=List[Dict], tags=["log"])
-def _get_asset_logs(assetId: int, algo: AlgoService = Depends(get_algo_client)):
+def _get_asset_logs(assetId: int, algo: AlgoService = Depends(get_algo_service)):
     return []
