@@ -6,6 +6,7 @@ from typing import Any, Dict
 from utils.constants import LOG_TOKEN_DESCRIPTION
 
 
+#  vvvv  copied from official docs vvvvv
 def wait_for_confirmation(client, txid):
     """
     Utility function to wait until the transaction is
@@ -70,6 +71,7 @@ def get_created_asset(algodclient, account, assetid):
             return my_account_info["params"]
             break
 
+#  ^^^^^  copied from official docs ^^^^^
 
 def hash_file_data(filename, return_type="bytes"):
     """

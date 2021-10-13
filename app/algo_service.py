@@ -61,7 +61,6 @@ class AlgoService:
 
         # Send the transaction to the network and retrieve the txid.
         txid = self.algod_client.send_transaction(stxn)
-        print(txid)
 
         # Retrieve the asset ID of the newly created asset by first
         # ensuring that the creation transaction was confirmed,
@@ -82,6 +81,7 @@ class AlgoService:
             return {"tx_id": txid, "asset_id": asset_id}
         except Exception as e:
             print(e)
+            raise AssertionError(f"could not find created asset from tx {txid}")
 
     def get_created_asset(self, asset_id: int):
         return get_created_asset(self.algod_client, self.master_account.public_key, asset_id)
@@ -130,6 +130,7 @@ def get_algo_client(node=".env-defined"):
         indexer_address = os.getenv("ALGORAND_INDEXER_ADDRESS")
         indexer_token = os.getenv("ALGORAND_INDEXER_TOKEN")
         master_mnemonic = os.getenv("MASTER_MNEMONIC")
+        print(f"connecting to node as defined in .env")
         return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic)
 
     if node == ".env-defined":
@@ -137,6 +138,7 @@ def get_algo_client(node=".env-defined"):
     else:
         connect_to = node
 
+    print(f"connecting to {connect_to}-node")
     # default config for algorand services
     algod_address = "http://localhost:4001"
     algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
