@@ -2,8 +2,8 @@ from typing import Dict, Tuple
 
 import pytest
 from algo_service import APP_PREFIX, AlgoService, get_algo_client
-from utils.types import (InvalidAssetIDException, NewLoanParams,
-                         NewLogAssetInput, AssetLog)
+from utils.types import (AssetLog, InvalidAssetIDException, NewLoanParams,
+                         NewLogAssetInput)
 from utils.utils import (get_arc3_nft_metadata, get_note_from_tx,
                          get_object_from_note)
 
@@ -61,7 +61,7 @@ def test_get_created_asset(test_asset: Tuple[AlgoService, int, Dict]):
 def test_log_tx_success(test_asset: Tuple[AlgoService, int, Dict]):
     algo, asset_id, _ = test_asset
     tx = algo.asset_tx_with_log(asset_id, LOG_DATA)
-    assert get_object_from_note(get_note_from_tx(tx['data']), prefix=APP_PREFIX) == LOG_DATA.dict()
+    assert get_object_from_note(get_note_from_tx(tx["data"]), prefix=APP_PREFIX) == LOG_DATA.dict()
 
     # test ownership didnt change by making another tx
     algo.asset_tx_with_log(asset_id, LOG_DATA)

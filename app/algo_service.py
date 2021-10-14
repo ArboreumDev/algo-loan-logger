@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict
 
 from algosdk import mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn
@@ -110,7 +109,7 @@ class AlgoService:
         stxn = txn.sign(self.master_account.private_key)
         txid = self.algod_client.send_transaction(stxn)
         tx_result = wait_for_confirmation(self.algod_client, txid)
-        return { 'tx_id': txid, 'data': tx_result }
+        return {"tx_id": txid, "data": tx_result}
 
 
 def get_algo_client(node=".env-defined"):
