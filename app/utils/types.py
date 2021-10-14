@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 from humps import camelize
 from pydantic import BaseModel
@@ -66,8 +66,9 @@ class NewLogAssetInput(CamelModel):
     loan_params: NewLoanParams
 
 
-class LogData(CamelModel):
-    input: Dict
+class AssetLog(CamelModel):
+    # TODO maybe add more here?
+    data: Dict
 
 
 class BaseException(Exception):

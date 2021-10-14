@@ -6,7 +6,7 @@ from algosdk import mnemonic
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn
 from algosdk.v2client import algod
 from dotenv import load_dotenv
-from utils.types import (InvalidAssetIDException, NewLogAssetInput,
+from utils.types import (AssetLog, InvalidAssetIDException, NewLogAssetInput,
                          UnlockedAccount)
 from utils.utils import (get_arc3_nft_metadata, get_created_asset,
                          wait_for_confirmation)
@@ -90,12 +90,12 @@ class AlgoService:
         account_info = self.algod_client.account_info(self.master_account.public_key)
         return [a["index"] for a in account_info["created-assets"]]
 
-    def asset_tx_with_log(self, asset_id: int, log_data: Dict):
+    def asset_tx_with_log(self, asset_id: int, log: AssetLog):
         if asset_id not in self.get_created_assets():
             raise InvalidAssetIDException(f"assetId {asset_id} not known")
 
         # create note with app-prefix according to note-field-conventions
-        note = (APP_PREFIX + json.dumps(log_data)).encode()
+        note = (APP_PREFIX + json.dumps(log.dict())).encode()
 
         params = self.algod_client.suggested_params()
         txn = AssetTransferTxn(
@@ -109,7 +109,8 @@ class AlgoService:
 
         stxn = txn.sign(self.master_account.private_key)
         txid = self.algod_client.send_transaction(stxn)
-        return wait_for_confirmation(self.algod_client, txid)
+        tx_result = wait_for_confirmation(self.algod_client, txid)
+        return { 'tx_id': txid, 'data': tx_result }
 
 
 def get_algo_client(node=".env-defined"):
