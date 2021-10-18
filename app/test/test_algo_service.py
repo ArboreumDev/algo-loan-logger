@@ -36,7 +36,9 @@ def test_asset(algo: AlgoService) -> Tuple[AlgoService, int, Dict]:
     # return algo, ret['asset_id'], asset_info
 
     # if you know a local asset id and haven't restarted the network, use this line to speed up tests
-    local_asset_id = 105
+    # 105 -> non-frozen nft owned by master account
+    # 160 -> frozen nft owned by master account, master-account is clawback
+    local_asset_id = 160
     asset_info = algo.get_created_asset(local_asset_id)
     return algo, local_asset_id, asset_info
 

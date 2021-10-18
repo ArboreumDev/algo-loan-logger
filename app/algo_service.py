@@ -26,6 +26,7 @@ class AlgoService:
         self.master_account = UnlockedAccount(
             public_key=mnemonic.to_public_key(master_mnemonic), private_key=mnemonic.to_private_key(master_mnemonic)
         )
+        self.clawback_account = self.master_account
 
     def create_new_asset(self, input: NewLogAssetInput):
         # Get network params for transactions before every transaction.
@@ -46,7 +47,7 @@ class AlgoService:
             manager=self.master_account.public_key,
             # reserve=self.master_account.public_key,
             freeze=self.master_account.public_key,
-            clawback=self.master_account.public_key,
+            clawback=self.clawback_account.public_key,
             # set this to False to allow empty-address to be automatically set to zero
             strict_empty_address_check=False,
             metadata_hash=metadata_hash,
@@ -88,27 +89,34 @@ class AlgoService:
         return [a["index"] for a in account_info["created-assets"]]
 
     def asset_tx_with_log(self, asset_id: int, log: AssetLog):
+        """
+        create a clawback transaction with 0 value from token holder itself 
+        attaching a piece of data to the note-field
+        """
         if asset_id not in self.get_created_assets():
             raise InvalidAssetIDException(f"assetId {asset_id} not known")
 
         # create note with app-prefix according to note-field-conventions
         note = (APP_PREFIX + json.dumps(log.dict())).encode()
 
+        # TODO parameterize this:
+        token_holder = self.master_account.public_key 
+
         params = self.algod_client.suggested_params()
         txn = AssetTransferTxn(
-            sender=self.master_account.public_key,
+            sender=self.clawback_account.public_key,
             sp=params,
-            receiver=self.master_account.public_key,
+            receiver=token_holder,
+            revocation_target=token_holder,
             amt=0,
             index=asset_id,
             note=note,
         )
 
-        stxn = txn.sign(self.master_account.private_key)
+        stxn = txn.sign(self.clawback_account.private_key)
         txid = self.algod_client.send_transaction(stxn)
         tx_result = wait_for_confirmation(self.algod_client, txid)
         return {"tx_id": txid, "data": tx_result}
-
 
 def get_algo_client(node=".env-defined"):
     """
