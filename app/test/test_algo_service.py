@@ -18,7 +18,7 @@ TEST_ASSET = NewLogAssetInput(
         apr=0.2,
         tenor_in_days=90,
         start_date=1633955469,
-        collection_frequency="daily",
+        compounding_frequency="daily",
         data='{"invoices": []}',
     ),
 )

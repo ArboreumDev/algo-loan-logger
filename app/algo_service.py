@@ -2,6 +2,7 @@ import json
 import os
 
 from algosdk import mnemonic
+from algosdk import encoding
 from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn
 from algosdk.v2client import algod
 from dotenv import load_dotenv
@@ -9,12 +10,14 @@ from utils.types import (AssetLog, InvalidAssetIDException, NewLogAssetInput,
                          UnlockedAccount)
 from utils.utils import (get_arc3_nft_metadata, get_created_asset,
                          wait_for_confirmation)
+from utils.constants import USDC_ID
 
 load_dotenv()
 
 
 APP_PREFIX = "arboreum/v1:j"
 
+       # return 31566704
 
 class AlgoService:
     def __init__(
@@ -93,8 +96,8 @@ class AlgoService:
         create a clawback transaction with 0 value from token holder itself 
         attaching a piece of data to the note-field
         """
-        if asset_id not in self.get_created_assets():
-            raise InvalidAssetIDException(f"assetId {asset_id} not known")
+        # if asset_id not in self.get_created_assets():
+            # raise InvalidAssetIDException(f"assetId {asset_id} not known")
 
         # create note with app-prefix according to note-field-conventions
         note = (APP_PREFIX + json.dumps(log.dict())).encode()
@@ -117,6 +120,35 @@ class AlgoService:
         txid = self.algod_client.send_transaction(stxn)
         tx_result = wait_for_confirmation(self.algod_client, txid)
         return {"tx_id": txid, "data": tx_result}
+
+    def create_opt_in_tx(self, asset_id, address):
+        params = self.algod_client.suggested_params()
+        txn = AssetTransferTxn(
+            sender=address,
+            sp=params,
+            receiver=address,
+            amt=0,
+            index=asset_id
+        )
+        py_enc_tx = encoding.msgpack_encode(txn)
+        # print('encoded', py_enc_tx)
+        return py_enc_tx
+
+    def create_usdc_transfer(self, sender, receiver, amount):
+        params = self.algod_client.suggested_params()
+        amount_with_decimals = amount * 10**6
+        txn = AssetTransferTxn(
+            sender=sender,
+            sp=params,
+            receiver=receiver,
+            amt=amount_with_decimals,
+            index=USDC_ID
+        )
+        py_enc_tx = encoding.msgpack_encode(txn)
+        return py_enc_tx
+
+
+
 
 def get_algo_client(node=".env-defined"):
     """

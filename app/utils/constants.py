@@ -12,3 +12,23 @@ LOG_TOKEN_DESCRIPTION = """
     """
 
 API_SECRET = os.getenv("API_SECRET")
+
+def usdc_asset_id():
+    env = os.getenv("ALGORAND_ENVIRONMENT")
+    if env == "TESTNET":
+        return 10458941
+
+    if env == "MAINNET":
+        return 31566704
+
+    if env == "SANDBOX":
+        raise NotImplementedError()
+
+    if env == "LOCAL":
+        raise NotImplementedError()
+
+    else: 
+        raise AssertionError(f"{env} is unknown network")
+
+USDC_ID = usdc_asset_id()
+ 

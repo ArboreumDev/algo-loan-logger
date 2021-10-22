@@ -128,6 +128,8 @@ def get_arc3_nft_metadata(
         "decimals": 0,
         "properties": "{json.dumps(loan_data, indent=2, sort_keys=True)}"
     }}"""
+    print('metadata_obj:')
+    print(str(json_metadata))
     return hash_str(json_metadata, return_type)
     # vars = {
     #     'name': name,

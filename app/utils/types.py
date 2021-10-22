@@ -49,6 +49,7 @@ class FundedInvoice(BaseModel):
     transaction_ref: str
 
 
+
 class NewLoanParams(CamelModel):
     loan_id: str
     borrower_info: str
@@ -56,7 +57,7 @@ class NewLoanParams(CamelModel):
     apr: float
     tenor_in_days: int
     start_date: int
-    collection_frequency: str  # "daily | monthly | weekly"
+    compounding_frequency: str  # "daily | monthly | weekly"
     # this is a stringified object of loan-specific data: for the tusker model it will be: List[FundedInvoice]
     data: str
 
