@@ -4,7 +4,7 @@ from algo_service import AlgoService, get_algo_client
 from fastapi import APIRouter, Depends
 from utils.types import AssetLog, CamelModel, NewLogAssetInput
 
-algorand_app = APIRouter()
+log_app = APIRouter()
 
 
 class NewAssetResponse(CamelModel):
@@ -21,12 +21,12 @@ def get_algo_service():
     return get_algo_client(node=".env-defined")
 
 
-@algorand_app.post("/log/new", response_model=NewAssetResponse, tags=["log"])
+@log_app.post("/log/new", response_model=NewAssetResponse, tags=["log"])
 def _create_new_asset(input: NewLogAssetInput, algo: AlgoService = Depends(get_algo_service)):
     return NewAssetResponse(**algo.create_new_asset(input))
 
 
-@algorand_app.post("/log/{asset_id}", response_model=AssetLogResponse, tags=["log"])
+@log_app.post("/log/{asset_id}", response_model=AssetLogResponse, tags=["log"])
 def _create_new_asset_log_entry(
     asset_id: int,
     log_data: AssetLog,
@@ -37,9 +37,9 @@ def _create_new_asset_log_entry(
 
 
 # TODO
-# @algorand_app.post("/log/{assetId}/close", tags=['log'])
+# @log_app.post("/log/{assetId}/close", tags=['log'])
 
 
-@algorand_app.get("/log/{asset_id}", response_model=List[Dict], tags=["log"])
+@log_app.get("/log/{asset_id}", response_model=List[Dict], tags=["log"])
 def _get_asset_logs(asset_id: int, algo: AlgoService = Depends(get_algo_service)):
     return []

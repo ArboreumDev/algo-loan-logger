@@ -25,7 +25,9 @@ def usdc_asset_id():
         raise NotImplementedError()
 
     if env == "LOCAL":
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        print("WANRING this is not actually a token matching USDC specs")
+        return 105
 
     else: 
         raise AssertionError(f"{env} is unknown network")

@@ -1,7 +1,7 @@
 import pytest
 from algo_service import get_algo_client
 from main import app
-from routes.v1.algorand import get_algo_service
+from routes.v1.log import get_algo_service
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from starlette.testclient import TestClient
 from utils.constants import API_SECRET

@@ -96,8 +96,8 @@ class AlgoService:
         create a clawback transaction with 0 value from token holder itself 
         attaching a piece of data to the note-field
         """
-        # if asset_id not in self.get_created_assets():
-            # raise InvalidAssetIDException(f"assetId {asset_id} not known")
+        if asset_id not in self.get_created_assets():
+            raise InvalidAssetIDException(f"assetId {asset_id} not known")
 
         # create note with app-prefix according to note-field-conventions
         note = (APP_PREFIX + json.dumps(log.dict())).encode()
