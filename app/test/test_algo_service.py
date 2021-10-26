@@ -1,11 +1,20 @@
 from typing import Dict, Tuple
+import json
+from algosdk import encoding
+from algosdk.error import AlgodHTTPError
 
 import pytest
 from algo_service import APP_PREFIX, AlgoService, get_algo_client
-from utils.types import (AssetLog, InvalidAssetIDException, NewLoanParams,
-                         NewLogAssetInput)
+from test.test_helpers import has_opted_in_to_app, opt_in_to_app
+from utils.types import (AssetLog, CreditProfile, InvalidAssetIDException, NewLoanParams,
+                         NewLogAssetInput, ProfileUpdate, UnlockedAccount)
 from utils.utils import (get_arc3_nft_metadata, get_note_from_tx,
-                         get_object_from_note)
+                         get_object_from_note, read_local_state, sign_and_send_tx, call_app)
+from test.fixtures import accounts
+from test.test_helpers import (
+    opt_out_of_app, opt_in_to_app, has_opted_in_to_app
+)
+from algosdk import mnemonic
 
 LOG_DATA = AssetLog(**{"data": {"anydict": 1}})
 
@@ -23,10 +32,50 @@ TEST_ASSET = NewLogAssetInput(
     ),
 )
 
+BORROWER_SECRET = accounts['borrower']['mnemonic']
+
+BORROWER = UnlockedAccount(
+    public_key=mnemonic.to_public_key(BORROWER_SECRET),
+    private_key=mnemonic.to_private_key(BORROWER_SECRET)
+)
+
+NEW_PROFILE = ProfileUpdate(
+    user_address=BORROWER.public_key,
+    active_loan=1,
+    loan_state="live"
+)
+
+PROFILE_UPDATE = ProfileUpdate(
+    user_address=BORROWER.public_key,
+    active_loan=1,
+    loan_state="defaulted"
+)
+
 
 @pytest.fixture(scope="session")
 def algo():
     return get_algo_client(node="LOCAL")
+
+
+@pytest.fixture(scope="session")
+def borrower_ready(algo: AlgoService):
+    # try opting the borrower in
+    try:
+        opt_in_to_app(algo, BORROWER, algo.profile_contract_id)
+    except AlgodHTTPError as e:
+        if not 'has already opted in' in str(e):
+            raise AssertionError("Could not opt in user")
+        else:
+            print("user already opted in")
+
+    yield algo, BORROWER
+
+    # try opting the borrower out again
+    try: 
+        opt_out_of_app(algo.algod_client, BORROWER, algo.profile_contract_id)
+    except:
+        print('could not log out user')
+
 
 
 @pytest.fixture(scope="session")
@@ -72,3 +121,68 @@ def test_log_tx_success(test_asset: Tuple[AlgoService, int, Dict]):
 def test_log_tx_invalid_asset_id(algo: AlgoService):
     with pytest.raises(InvalidAssetIDException):
         algo.asset_tx_with_log(1, LOG_DATA)
+
+
+def test_new_credit_profile_failure(algo: AlgoService):
+    # cant write to userProfile that hasnt opted in
+    # with pytest.raises():
+    result, data = algo.create_new_profile(NEW_PROFILE)
+    assert not result
+    assert "has not opted in" in data
+
+
+def test_opt_in(algo: AlgoService):
+    assert not has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id) 
+
+    opt_in_to_app(algo, BORROWER, algo.profile_contract_id)
+
+    assert has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id) 
+
+
+# def test_opt_out(algo: AlgoService):
+def test_opt_out(borrower_ready: Tuple[AlgoService, UnlockedAccount]):
+    algo, borrower = borrower_ready
+
+    assert has_opted_in_to_app(algo.algod_client, borrower.public_key, algo.profile_contract_id)
+
+    opt_out_of_app(algo.algod_client, borrower, algo.profile_contract_id)
+
+    assert not has_opted_in_to_app(algo.algod_client, borrower.public_key, algo.profile_contract_id)
+
+
+def test_new_credit_profile_success(borrower_ready: Tuple[AlgoService, UnlockedAccount]):
+    algo, borrower = borrower_ready
+
+    result, data = algo.create_new_profile(NEW_PROFILE)
+    assert result
+    assert data
+
+    local_state_raw = read_local_state(algo.algod_client, borrower.public_key, algo.profile_contract_id)
+
+    # interpret as CreditProfile and compare
+    assert 'credit' in local_state_raw
+    state_object = json.loads(local_state_raw['credit'])
+    credit_info = CreditProfile(**state_object)
+
+    # verify local state
+    assert NEW_PROFILE.loan_state == credit_info.loan_state
+    assert NEW_PROFILE.active_loan == credit_info.active_loan
+
+
+def test_new_credit_profile_access_restrictions(borrower_ready: Tuple[AlgoService, UnlockedAccount]):
+    algo, borrower = borrower_ready
+
+    accounts = [borrower.public_key]
+    borrower_metadata = json.dumps({"activeLoan": 'someID', "loanState": 'repaid'})
+    app_args = [b'new_profile', bytes(borrower_metadata, 'utf-8')]
+
+    with pytest.raises(AlgodHTTPError):
+        call_app(algo.algod_client, borrower.private_key, algo.profile_contract_id, app_args, accounts)
+        # with master key no error is raised:
+        # call_app(algo.algod_client, algo.master_account.private_key, algo.profile_contract_id, app_args, accounts)
+
+
+
+def test_change_profile(algo: AlgoService):
+    # only creator can create write profile for user
+    pass

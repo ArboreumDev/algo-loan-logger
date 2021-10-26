@@ -71,6 +71,15 @@ class AssetLog(CamelModel):
     # TODO maybe add more here?
     data: Dict
 
+class CreditProfile(CamelModel):
+    loan_state: str
+    active_loan: int
+
+class ProfileUpdate(CreditProfile):
+    user_address: str
+    loan_state: str
+    active_loan: int
+
 
 class BaseException(Exception):
     """ Base class for all exceptions that are thrown here """

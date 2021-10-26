@@ -26,6 +26,11 @@ def _optin(asset_id: str, address: str, algo: AlgoService = Depends(get_algo_ser
     msgPack=algo.create_opt_in_tx(asset_id, address)
     return EncodedTransaction(blob=msgPack)
 
+@tx_app.get("/optIn/profile/{address}", response_model=EncodedTransaction, tags=["transfer"])
+def _optin(asset_id: str, address: str, algo: AlgoService = Depends(get_algo_service)):
+    msgPack=algo.create_opt_in_tx_to_profile_contract(address)
+    return EncodedTransaction(blob=msgPack)
+
 @tx_app.get("/transfer/usdc/{sender}/{receiver}/{amount}", response_model=EncodedTransaction, tags=["transfer"])
 def _optin(sender: str, receiver: str, amount: int, algo: AlgoService = Depends(get_algo_service)):
     msgPack=algo.create_usdc_transfer(sender, receiver, amount)

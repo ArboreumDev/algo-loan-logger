@@ -1,7 +1,13 @@
 import base64
+from algosdk import encoding
 import hashlib
+import yaml
 import json
 from typing import Any, Dict
+
+from algosdk.future import transaction
+from algosdk import account
+from algosdk.v2client import algod
 
 from utils.constants import LOG_TOKEN_DESCRIPTION
 
@@ -147,3 +153,102 @@ def get_arc3_nft_metadata(
 # print(hash_file_data("./sample_loan.json", 'base64'))
 # print(hash_object({'a': 1}, 'base64'))
 # print(hash_object({'a': 1}))
+
+# Call application
+def call_app(client, private_key, index, app_args, accounts): 
+    # Declare sender
+    sender = account.address_from_private_key(private_key)
+    print("Call from account: ", sender)
+
+    # Get node suggested parameters
+    params = client.suggested_params()
+    # params.flat_fee = True
+    # params.fee = 1000
+
+    # Create unsigned transaction
+    txn = transaction.ApplicationNoOpTxn(sender, params, index, app_args, accounts)
+
+    # Sign transaction
+    signed_txn = txn.sign(private_key)
+    tx_id = signed_txn.transaction.get_txid()
+
+    # Send transaction
+    client.send_transactions([signed_txn])
+
+    # Await confirmation
+    wait_for_confirmation(client, tx_id)
+
+    # Display results
+    transaction_response = client.pending_transaction_info(tx_id)
+    print("Called app-id: ", transaction_response['txn']['txn']['apid'])
+
+    if "global-state-delta" in transaction_response :
+        print("Global State updated :\n", transaction_response['global-state-delta'])
+    if "local-state-delta" in transaction_response :
+        print("Local State updated :\n", transaction_response['local-state-delta'])
+
+    return tx_id
+
+
+# Read user local state
+def read_local_state(client, addr, app_id):
+    results = client.account_info(addr)
+    local_state = results['apps-local-state'][0]
+    ret = {}
+    for index in local_state:
+        if local_state[index] == app_id:
+            print(f"local_state of account {addr} for app_id {app_id}:")
+
+            # Check if there is a local state to even display
+            if 'key-value' not in local_state:
+                print("\t", "No local state")
+                return ret
+
+            for kv in local_state['key-value']:
+                key = base64.b64decode(kv['key'])
+                value = kv['value']
+                if 'bytes' in value:
+                    value['bytes'] = base64.b64decode(value['bytes'])
+
+                    # this is my adaptation to make it more user-friendly
+                    # not sure if trying to decode from bytes without checks liek this might cause trouble 
+                    # for some local state
+                    ret[key.decode('utf-8')] = value['bytes'].decode('utf-8')
+
+                # print("\t", key, value)
+    return ret
+
+# Read app global state
+def read_global_state(client, addr, app_id):   
+    results = client.account_info(addr)
+    apps_created = results['created-apps']
+    for app in apps_created:
+        if app['id'] == app_id:
+            print(f"global_state for app_id {app_id}:")
+
+            # Check if there is a global state to even display
+            if 'global-state' not in app['params']:
+                print("\t", "No global state")
+                return
+
+            for kv in app['params']['global-state']:
+                key = base64.b64decode(kv['key'])
+                value = kv['value']
+                if 'bytes' in value:
+                    value['bytes'] = base64.b64decode(value['bytes'])
+
+                print("\t", key, value)
+
+
+def sign_and_send_tx(client, unsigned_tx, private_key):
+    # Sign transaction
+    signed_txn = unsigned_tx.sign(private_key)
+    tx_id = signed_txn.transaction.get_txid()
+
+    # Send transaction
+    client.send_transactions([signed_txn])
+
+    # Await confirmation
+    return  wait_for_confirmation(client, tx_id)
+
+
