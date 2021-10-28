@@ -9,8 +9,8 @@ from algosdk.v2client import algod
 from dotenv import load_dotenv
 from utils.types import (AssetLog, InvalidAssetIDException, NewLogAssetInput,
                          UnlockedAccount, ProfileUpdate)
-from utils.utils import (get_arc3_nft_metadata, get_created_asset,
-                         wait_for_confirmation, call_app)
+from utils.utils import (check_registrar_field_match, get_arc3_nft_metadata, get_created_asset,
+                         wait_for_confirmation, call_app, read_global_state)
 from utils.constants import USDC_ID
 
 load_dotenv()
@@ -40,7 +40,14 @@ class AlgoService:
         )
         self.clawback_account = self.master_account
         self.profile_contract_id = profile_contract_id
-        # TODO verify that master_account is the registrar-address by reading global state of profile-contract
+
+        # verify that master_account is the registrar-address by reading global state of profile-contract
+        global_master_state = read_global_state(self.algod_client, self.master_account.public_key, profile_contract_id)
+        if not check_registrar_field_match(global_master_state, self.master_account.public_key):
+            raise AssertionError("master-account is not registered as registrar of profile app")
+            
+
+
 
     def create_new_asset(self, input: NewLogAssetInput):
         # Get network params for transactions before every transaction.

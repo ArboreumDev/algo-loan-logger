@@ -2,6 +2,7 @@ from typing import Dict, Tuple
 import json
 from algosdk import encoding
 from algosdk.error import AlgodHTTPError
+from dotenv import load_dotenv
 
 import pytest
 from algo_service import APP_PREFIX, AlgoService, get_algo_client
@@ -15,6 +16,9 @@ from test.test_helpers import (
     opt_out_of_app, opt_in_to_app, has_opted_in_to_app
 )
 from algosdk import mnemonic
+import os
+
+load_dotenv()
 
 LOG_DATA = AssetLog(**{"data": {"anydict": 1}})
 
@@ -91,6 +95,27 @@ def test_asset(algo: AlgoService) -> Tuple[AlgoService, int, Dict]:
     asset_info = algo.get_created_asset(local_asset_id)
     return algo, local_asset_id, asset_info
 
+
+def test_init_check():
+    #  config for local net
+    algod_address = "http://localhost:4001"
+    algod_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    indexer_address = "http://localhost:8980"
+    indexer_token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    master_mnemonic = os.getenv("LOCAL_MASTER_MNEMONIC")
+    invalid_master_mnemonic = os.getenv("SANDBOX_MASTER_MNEMONIC")
+    valid_profile_contract_id = int(os.getenv("LOCAL_PROFILE_CONTRACT_ID"))
+    invalid_profile_contract_id = int(os.getenv("SANDBOX_PROFILE_CONTRACT_ID"))
+
+    # this should work
+    AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, valid_profile_contract_id, "LOCAL")
+
+    with pytest.raises(AssertionError):
+        AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, invalid_profile_contract_id, "LOCAL")
+ 
+    with pytest.raises(AssertionError):
+        AlgoService(algod_address, algod_token, indexer_token, indexer_address, invalid_master_mnemonic, valid_profile_contract_id, "LOCAL")
 
 def test_asset_creation(algo: AlgoService):
     ret = algo.create_new_asset(input=TEST_ASSET)

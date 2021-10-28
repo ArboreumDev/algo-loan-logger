@@ -222,6 +222,7 @@ def read_local_state(client, addr, app_id):
 def read_global_state(client, addr, app_id):   
     results = client.account_info(addr)
     apps_created = results['created-apps']
+    ret = {}
     for app in apps_created:
         if app['id'] == app_id:
             print(f"global_state for app_id {app_id}:")
@@ -236,8 +237,22 @@ def read_global_state(client, addr, app_id):
                 value = kv['value']
                 if 'bytes' in value:
                     value['bytes'] = base64.b64decode(value['bytes'])
+                    # my addition
+                    ret[key.decode('utf-8')] = value['bytes']
 
                 print("\t", key, value)
+    return ret
+
+def check_registrar_field_match(global_state: Dict, registrar_address: str):
+    ''' verifies if there is a registrar key in the global state that stores a given address'''
+    try:
+        for key, value in global_state.items():
+            if key == "registrar":
+                from_state = encoding.encode_address(value)
+                return registrar_address == from_state
+            else: return False
+    except: 
+        return False
 
 
 def sign_and_send_tx(client, unsigned_tx, private_key):

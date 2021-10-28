@@ -8,11 +8,6 @@ from fastapi import APIRouter, Depends
 tx_app = APIRouter()
 
 
-# class NewAssetResponse(CamelModel):
-#     asset_id: int
-#     tx_id: str
-
-
 # better: EncodedUnsignedTransaction(BaseModel):
 class EncodedTransaction(BaseModel):
     blob: str
