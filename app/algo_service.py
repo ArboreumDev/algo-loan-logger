@@ -23,13 +23,15 @@ APP_PREFIX = "arboreum/v1:j"
 class AlgoService:
     def __init__(
         self, algod_address: str, algod_token: str, indexer_token: str, indexer_address: str, master_mnemonic: str,
-        profile_contract_id: int
+        profile_contract_id: int, net_name: str
+
     ):
         """
         profile_contract_id: ID of the deployed profile-contract
         NOTE: the account behind the master_mnemnonic must be the "registrar"-role in order to be able to create 
         and update user local storage
         """
+        self.net = net_name
         headers = {"X-API-Key": algod_token}
         self.algod_client = algod.AlgodClient(algod_token, algod_address, headers)
         # self.indexer = indexer.IndexerClient(indexer_token, indexer_address)
@@ -212,7 +214,7 @@ def get_algo_client(node=".env-defined"):
         master_mnemonic = os.getenv("MASTER_MNEMONIC")
         profile_contract_id = int(os.getenv("PROFILE_CONTRACT_ID"))
         print(f"connecting to node as defined in .env")
-        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id)
+        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, "CUSTOM")
 
     if node == ".env-defined":
         connect_to = os.getenv("ALGORAND_ENVIRONMENT")
@@ -238,7 +240,7 @@ def get_algo_client(node=".env-defined"):
             master_mnemonic = os.getenv("SANDBOX_MASTER_MNEMONIC")
             profile_contract_id = int(os.getenv("SANDBOX_PROFILE_CONTRACT_ID"))
 
-        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id)
+        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, connect_to)
 
     elif connect_to == "TESTNET":
         # testnet access via https://developer.purestake.io/
@@ -252,7 +254,7 @@ def get_algo_client(node=".env-defined"):
         master_mnemonic = os.getenv("PURESTAKE_MNEMONIC")
         profile_contract_id = int(os.getenv("TESTNET_PROFILE_CONTRACT_ID"))
 
-        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id)
+        return AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, connect_to)
 
     elif connect_to == "MAINNET":
         raise NotImplementedError("mainnet not configured yet")

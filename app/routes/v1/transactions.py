@@ -13,21 +13,24 @@ tx_app = APIRouter()
 #     tx_id: str
 
 
+# better: EncodedUnsignedTransaction(BaseModel):
 class EncodedTransaction(BaseModel):
     blob: str
 
+class NodeInfo(BaseModel):
+    name: str
 
 def get_algo_service():
     return get_algo_client(node=".env-defined")
 
 
-@tx_app.get("/optIn/{asset_id}/{address}", response_model=EncodedTransaction, tags=["transfer"])
-def _optin_asset(asset_id: str, address: str, algo: AlgoService = Depends(get_algo_service)):
+@tx_app.get("/optIn/asset/{asset_id}/{address}", response_model=EncodedTransaction, tags=["transfer"])
+def _optin_asset(asset_id: int, address: str, algo: AlgoService = Depends(get_algo_service)):
     msgPack=algo.create_opt_in_tx(asset_id, address)
     return EncodedTransaction(blob=msgPack)
 
 @tx_app.get("/optIn/profile/{address}", response_model=EncodedTransaction, tags=["transfer"])
-def _optin_app(asset_id: str, address: str, algo: AlgoService = Depends(get_algo_service)):
+def _optin_app(address: str, algo: AlgoService = Depends(get_algo_service)):
     msgPack=algo.create_opt_in_tx_to_profile_contract(address)
     return EncodedTransaction(blob=msgPack)
 
@@ -36,6 +39,10 @@ def _usdc_transfer(sender: str, receiver: str, amount: int, algo: AlgoService = 
     msgPack=algo.create_usdc_transfer(sender, receiver, amount)
     return EncodedTransaction(blob=msgPack)
 
+
+@tx_app.get("/health/net", response_model=str, tags=["transfer"])
+def _get_net_name(algo: AlgoService = Depends(get_algo_service)):
+    return NodeInfo(name=algo.net)
 
 
 # @tx_app.post("/log/{asset_id}", response_model=AssetLogResponse, tags=["log"])

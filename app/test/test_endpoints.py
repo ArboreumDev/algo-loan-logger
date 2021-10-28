@@ -44,3 +44,12 @@ def test_create_new_log_success():
 @pytest.mark.skip()
 def test_create_new_log_failure():
     pass
+
+@pytest.mark.skip()
+def test_create_new_profile():
+    pass
+
+
+@pytest.mark.skip()
+def test_update_profile():
+    pass
