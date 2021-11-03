@@ -1,6 +1,5 @@
 from typing import Dict, Tuple
 import json
-from algosdk import encoding
 from algosdk.error import AlgodHTTPError
 from dotenv import load_dotenv
 
@@ -149,8 +148,11 @@ def test_log_tx_invalid_asset_id(algo: AlgoService):
 
 
 def test_new_credit_profile_failure(algo: AlgoService):
-    # cant write to userProfile that hasnt opted in
-    # with pytest.raises():
+    # setup: opt borrower out
+    opt_out_of_app(algo.algod_client, BORROWER, algo.profile_contract_id)
+    assert BORROWER.public_key == NEW_PROFILE.user_address
+
+    # try creating profile
     result, data = algo.create_new_profile(NEW_PROFILE)
     assert not result
     assert "has not opted in" in data
