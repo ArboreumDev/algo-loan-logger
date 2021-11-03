@@ -5,6 +5,10 @@ from routes.v1.log import get_algo_service
 from starlette.status import HTTP_200_OK, HTTP_401_UNAUTHORIZED
 from starlette.testclient import TestClient
 from utils.constants import API_SECRET
+from test.test_helpers import (
+    opt_out_of_app, opt_in_to_app, has_opted_in_to_app
+)
+from algo_service import AlgoService, get_algo_client
 
 
 def override_get_algo_service():
@@ -53,3 +57,11 @@ def test_create_new_profile():
 @pytest.mark.skip()
 def test_update_profile():
     pass
+
+
+def test_sampleOptIn():
+    res = client.get(f"v1/test/optIn/new", headers=auth_header)
+    assert res.status_code == HTTP_200_OK
+    data = res.json()
+    algo = get_algo_client(node='LOCAL')
+    assert has_opted_in_to_app(algo.algod_client, data['address'], algo.profile_contract_id)

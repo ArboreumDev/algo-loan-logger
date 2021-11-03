@@ -4,14 +4,14 @@ import os
 from algosdk import mnemonic
 from algosdk.error import AlgodHTTPError
 from algosdk import encoding
-from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, ApplicationOptInTxn
+from algosdk.future.transaction import AssetConfigTxn, AssetTransferTxn, ApplicationOptInTxn, PaymentTxn
 from algosdk.v2client import algod
 from dotenv import load_dotenv
 from utils.types import (AssetLog, InvalidAssetIDException, NewLogAssetInput,
                          UnlockedAccount, ProfileUpdate)
 from utils.utils import (check_registrar_field_match, get_arc3_nft_metadata, get_created_asset,
                          wait_for_confirmation, call_app, read_global_state)
-from utils.constants import USDC_ID
+from utils.constants import USDC_ID, MIN_PARTICIPATION_AMOUNT
 
 load_dotenv()
 
@@ -199,6 +199,22 @@ class AlgoService:
             
     def update_profile(self, update: ProfileUpdate):
         pass
+
+    def fund_account(self, receiver_address: str): 
+        """ this funds an account with the minimum amount of algos so that they can participate in the smart-contract"""
+        params = self.algod_client.suggested_params()
+        unsigned_txn = PaymentTxn(
+            self.master_account.public_key,
+            params,
+            receiver_address,
+            # 1 to be active, 1 for usdc, 1 for participation in profile contract
+            MIN_PARTICIPATION_AMOUNT * 3, 
+            None, "fund minimal amount".encode()
+        )
+        signed_txn = unsigned_txn.sign(self.master_account.private_key)
+        transaction_id = self.algod_client.send_transaction(signed_txn) #send the signed transaction to the network
+        return transaction_id 
+
 
 
 def get_algo_client(node=".env-defined"):
