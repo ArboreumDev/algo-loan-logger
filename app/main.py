@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from routes.v1.log import log_app
+from routes.v1.state import state_app
 from routes.v1.profile import profile_app
 from routes.v1.transactions import tx_app
 from routes.v1.test import test_app
@@ -31,6 +32,7 @@ app = FastAPI()
 app.include_router(log_app, prefix="/v1", dependencies=[Depends(check_authorization)])
 app.include_router(profile_app, prefix="/v1", dependencies=[Depends(check_authorization)])
 app.include_router(tx_app, prefix="/v1/tx", dependencies=[])
+app.include_router(state_app, prefix="/v1/state", dependencies=[])
 app.include_router(test_app, prefix="/v1/test", dependencies=[Depends(check_authorization)])
 
 origins = [
