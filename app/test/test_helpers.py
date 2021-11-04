@@ -23,6 +23,11 @@ def has_opted_in_to_app(client: any, user_address: str, app_id: int):
     return app_id in [ a['id'] for a in results['apps-local-state']]
 
 
+def has_opted_in_to_asset(client: any, user_address: str, asset_id: int):
+    results = client.account_info(user_address)
+    return asset_id in [ a['asset-id'] for a in results['assets']]
+
+
 def opt_out_of_app(client: any, unlocked_account: UnlockedAccount, app_id: int):
     # Get node suggested parameters
     params = client.suggested_params()
