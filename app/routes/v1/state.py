@@ -32,10 +32,15 @@ def _read_local(address: str, algo: AlgoService = Depends(get_algo_service)):
 
 @state_app.get("/optIn/asset/{asset_id}/{address}", response_model=bool, tags=["log"])
 def _check_asset_opt_in(asset_id: int, address: str, algo: AlgoService = Depends(get_algo_service)):
-    return has_opted_in_to_asset(algo.algod_client, address, asset_id)
-    # raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, "not implemented")
+    try:
+        return has_opted_in_to_asset(algo.algod_client, address, asset_id)
+    except Exception as e:
+        raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, str(e))
 
 @state_app.get("/optIn/profile/{address}", response_model=bool, tags=["log"])
 def _check_profile_opt_in(address: str, algo: AlgoService = Depends(get_algo_service)):
-    return has_opted_in_to_app(algo.algod_client, address, algo.profile_contract_id)
+    try:
+        return has_opted_in_to_app(algo.algod_client, address, algo.profile_contract_id)
+    except Exception as e:
+        raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, str(e))
  
