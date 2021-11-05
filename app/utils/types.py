@@ -56,7 +56,7 @@ class NewLoanParams(CamelModel):
     apr: float
     tenor_in_days: int
     start_date: int
-    collection_frequency: str  # "daily | monthly | weekly"
+    compounding_frequency: str  # "daily | monthly | weekly"
     # this is a stringified object of loan-specific data: for the tusker model it will be: List[FundedInvoice]
     data: str
 
@@ -69,6 +69,17 @@ class NewLogAssetInput(CamelModel):
 class AssetLog(CamelModel):
     # TODO maybe add more here?
     data: Dict
+
+
+class CreditProfile(CamelModel):
+    loan_state: str
+    active_loan: int
+
+
+class ProfileUpdate(CreditProfile):
+    user_address: str
+    loan_state: str
+    active_loan: int
 
 
 class BaseException(Exception):

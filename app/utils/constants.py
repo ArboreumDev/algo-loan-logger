@@ -12,3 +12,28 @@ LOG_TOKEN_DESCRIPTION = """
     """
 
 API_SECRET = os.getenv("API_SECRET")
+
+
+def usdc_asset_id():
+    env = os.getenv("ALGORAND_ENVIRONMENT")
+    if env == "TESTNET":
+        return 10458941
+
+    if env == "MAINNET":
+        return 31566704
+
+    if env == "SANDBOX":
+        raise 60
+
+    if env == "LOCAL":
+        # raise NotImplementedError()
+        print("WANRING this is not actually a token matching USDC specs")
+        return 261
+
+    else:
+        raise AssertionError(f"{env} is unknown network")
+
+
+USDC_ID = usdc_asset_id()
+# minimum an account must hold to be valid (and additionally for each asset or app they opt into!)
+MIN_PARTICIPATION_AMOUNT = 100000
