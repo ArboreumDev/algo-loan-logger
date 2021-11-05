@@ -1,19 +1,17 @@
+from test.test_helpers import has_opted_in_to_app
 from typing import Dict, List
 
 from algo_service import AlgoService, get_algo_client
 from fastapi import APIRouter, Depends, HTTPException
-from starlette.status import (HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED)
-
-from utils.types import (
-    AssetLog, CamelModel, ProfileUpdate
-)
-from test.test_helpers import has_opted_in_to_app
+from starlette.status import HTTP_400_BAD_REQUEST
+from utils.types import CamelModel, ProfileUpdate
 
 profile_app = APIRouter()
 
 
 class CompletedTransactionInfo(CamelModel):
     tx_id: str
+
 
 NewProfileResponse = CompletedTransactionInfo
 ProfileUpdateResponse = CompletedTransactionInfo
@@ -28,10 +26,8 @@ def _create_new_profile(input: ProfileUpdate, algo: AlgoService = Depends(get_al
     success, msg = algo.create_new_profile(input)
     if success:
         return NewProfileResponse(tx_id=msg)
-    else: 
+    else:
         raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=f"Profile could not be created: {str(msg)}")
-
-
 
 
 @profile_app.post("/profile/update", response_model=ProfileUpdateResponse, tags=["log"])

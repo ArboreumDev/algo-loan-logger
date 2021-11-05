@@ -1,8 +1,7 @@
-from typing import Dict, List
-from pydantic import BaseModel
-
 from algo_service import AlgoService, get_algo_client
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
 # from utils.types import AssetLog, CamelModel, NewLogAssetInput
 
 tx_app = APIRouter()
@@ -12,8 +11,10 @@ tx_app = APIRouter()
 class EncodedTransaction(BaseModel):
     blob: str
 
+
 class NodeInfo(BaseModel):
     name: str
+
 
 def get_algo_service():
     return get_algo_client(node=".env-defined")
@@ -21,17 +22,19 @@ def get_algo_service():
 
 @tx_app.get("/optIn/asset/{asset_id}/{address}", response_model=EncodedTransaction, tags=["transfer"])
 def _optin_asset(asset_id: int, address: str, algo: AlgoService = Depends(get_algo_service)):
-    msgPack=algo.create_opt_in_tx(asset_id, address)
+    msgPack = algo.create_opt_in_tx(asset_id, address)
     return EncodedTransaction(blob=msgPack)
+
 
 @tx_app.get("/optIn/profile/{address}", response_model=EncodedTransaction, tags=["transfer"])
 def _optin_app(address: str, algo: AlgoService = Depends(get_algo_service)):
-    msgPack=algo.create_opt_in_tx_to_profile_contract(address)
+    msgPack = algo.create_opt_in_tx_to_profile_contract(address)
     return EncodedTransaction(blob=msgPack)
+
 
 @tx_app.get("/transfer/usdc/{sender}/{receiver}/{amount}", response_model=EncodedTransaction, tags=["transfer"])
 def _usdc_transfer(sender: str, receiver: str, amount: int, algo: AlgoService = Depends(get_algo_service)):
-    msgPack=algo.create_usdc_transfer(sender, receiver, amount)
+    msgPack = algo.create_usdc_transfer(sender, receiver, amount)
     return EncodedTransaction(blob=msgPack)
 
 

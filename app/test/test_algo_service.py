@@ -1,21 +1,20 @@
-from typing import Dict, Tuple
 import json
-from algosdk.error import AlgodHTTPError
-from dotenv import load_dotenv
+import os
+from test.fixtures import accounts
+from test.test_helpers import (has_opted_in_to_app, opt_in_to_app,
+                               opt_out_of_app)
+from typing import Dict, Tuple
 
 import pytest
 from algo_service import APP_PREFIX, AlgoService, get_algo_client
-from test.test_helpers import has_opted_in_to_app, opt_in_to_app
-from utils.types import (AssetLog, CreditProfile, InvalidAssetIDException, NewLoanParams,
-                         NewLogAssetInput, ProfileUpdate, UnlockedAccount)
-from utils.utils import (get_arc3_nft_metadata, get_note_from_tx,
-                         get_object_from_note, read_local_state, sign_and_send_tx, call_app)
-from test.fixtures import accounts
-from test.test_helpers import (
-    opt_out_of_app, opt_in_to_app, has_opted_in_to_app
-)
 from algosdk import mnemonic
-import os
+from algosdk.error import AlgodHTTPError
+from dotenv import load_dotenv
+from utils.types import (AssetLog, CreditProfile, InvalidAssetIDException,
+                         NewLoanParams, NewLogAssetInput, ProfileUpdate,
+                         UnlockedAccount)
+from utils.utils import (call_app, get_arc3_nft_metadata, get_note_from_tx,
+                         get_object_from_note, read_local_state)
 
 load_dotenv()
 
@@ -35,24 +34,15 @@ TEST_ASSET = NewLogAssetInput(
     ),
 )
 
-BORROWER_SECRET = accounts['borrower']['mnemonic']
+BORROWER_SECRET = accounts["borrower"]["mnemonic"]
 
 BORROWER = UnlockedAccount(
-    public_key=mnemonic.to_public_key(BORROWER_SECRET),
-    private_key=mnemonic.to_private_key(BORROWER_SECRET)
+    public_key=mnemonic.to_public_key(BORROWER_SECRET), private_key=mnemonic.to_private_key(BORROWER_SECRET)
 )
 
-NEW_PROFILE = ProfileUpdate(
-    user_address=BORROWER.public_key,
-    active_loan=1,
-    loan_state="live"
-)
+NEW_PROFILE = ProfileUpdate(user_address=BORROWER.public_key, active_loan=1, loan_state="live")
 
-PROFILE_UPDATE = ProfileUpdate(
-    user_address=BORROWER.public_key,
-    active_loan=1,
-    loan_state="defaulted"
-)
+PROFILE_UPDATE = ProfileUpdate(user_address=BORROWER.public_key, active_loan=1, loan_state="defaulted")
 
 
 @pytest.fixture(scope="session")
@@ -66,7 +56,7 @@ def borrower_ready(algo: AlgoService):
     try:
         opt_in_to_app(algo, BORROWER, algo.profile_contract_id)
     except AlgodHTTPError as e:
-        if not 'has already opted in' in str(e):
+        if "has already opted in" not in str(e):
             raise AssertionError("Could not opt in user")
         else:
             print("user already opted in")
@@ -74,11 +64,10 @@ def borrower_ready(algo: AlgoService):
     yield algo, BORROWER
 
     # try opting the borrower out again
-    try: 
+    try:
         opt_out_of_app(algo.algod_client, BORROWER, algo.profile_contract_id)
-    except:
-        print('could not log out user')
-
+    except Exception as e:
+        print("could not log out user", e)
 
 
 @pytest.fixture(scope="session")
@@ -108,13 +97,32 @@ def test_init_check():
     invalid_profile_contract_id = int(os.getenv("SANDBOX_PROFILE_CONTRACT_ID"))
 
     # this should work
-    AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, valid_profile_contract_id, "LOCAL")
+    AlgoService(
+        algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, valid_profile_contract_id, "LOCAL"
+    )
 
     with pytest.raises(AssertionError):
-        AlgoService(algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, invalid_profile_contract_id, "LOCAL")
- 
+        AlgoService(
+            algod_address,
+            algod_token,
+            indexer_token,
+            indexer_address,
+            master_mnemonic,
+            invalid_profile_contract_id,
+            "LOCAL",
+        )
+
     with pytest.raises(AssertionError):
-        AlgoService(algod_address, algod_token, indexer_token, indexer_address, invalid_master_mnemonic, valid_profile_contract_id, "LOCAL")
+        AlgoService(
+            algod_address,
+            algod_token,
+            indexer_token,
+            indexer_address,
+            invalid_master_mnemonic,
+            valid_profile_contract_id,
+            "LOCAL",
+        )
+
 
 def test_asset_creation(algo: AlgoService):
     ret = algo.create_new_asset(input=TEST_ASSET)
@@ -159,11 +167,11 @@ def test_new_credit_profile_failure(algo: AlgoService):
 
 
 def test_opt_in(algo: AlgoService):
-    assert not has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id) 
+    assert not has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id)
 
     opt_in_to_app(algo, BORROWER, algo.profile_contract_id)
 
-    assert has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id) 
+    assert has_opted_in_to_app(algo.algod_client, BORROWER.public_key, algo.profile_contract_id)
 
 
 # def test_opt_out(algo: AlgoService):
@@ -187,8 +195,8 @@ def test_new_credit_profile_success(borrower_ready: Tuple[AlgoService, UnlockedA
     local_state_raw = read_local_state(algo.algod_client, borrower.public_key, algo.profile_contract_id)
 
     # interpret as CreditProfile and compare
-    assert 'credit' in local_state_raw
-    state_object = json.loads(local_state_raw['credit'])
+    assert "credit" in local_state_raw
+    state_object = json.loads(local_state_raw["credit"])
     credit_info = CreditProfile(**state_object)
 
     # verify local state
@@ -200,14 +208,13 @@ def test_new_credit_profile_access_restrictions(borrower_ready: Tuple[AlgoServic
     algo, borrower = borrower_ready
 
     accounts = [borrower.public_key]
-    borrower_metadata = json.dumps({"activeLoan": 'someID', "loanState": 'repaid'})
-    app_args = [b'new_profile', bytes(borrower_metadata, 'utf-8')]
+    borrower_metadata = json.dumps({"activeLoan": "someID", "loanState": "repaid"})
+    app_args = [b"new_profile", bytes(borrower_metadata, "utf-8")]
 
     with pytest.raises(AlgodHTTPError):
         call_app(algo.algod_client, borrower.private_key, algo.profile_contract_id, app_args, accounts)
         # with master key no error is raised:
         # call_app(algo.algod_client, algo.master_account.private_key, algo.profile_contract_id, app_args, accounts)
-
 
 
 def test_change_profile(algo: AlgoService):

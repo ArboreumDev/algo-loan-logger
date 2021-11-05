@@ -2,15 +2,15 @@
 import os
 
 from argon2 import PasswordHasher
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from routes.v1.log import log_app
-from routes.v1.state import state_app
 from routes.v1.profile import profile_app
-from routes.v1.transactions import tx_app
+from routes.v1.state import state_app
 from routes.v1.test import test_app
+from routes.v1.transactions import tx_app
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 load_dotenv()
@@ -35,10 +35,8 @@ app.include_router(tx_app, prefix="/v1/tx", dependencies=[])
 app.include_router(state_app, prefix="/v1/state", dependencies=[])
 app.include_router(test_app, prefix="/v1/test", dependencies=[Depends(check_authorization)])
 
-origins = [
-    FRONTEND_URL
-]
-print('origins', origins)
+origins = [FRONTEND_URL]
+print("origins", origins)
 
 app.add_middleware(
     CORSMiddleware,

@@ -49,7 +49,6 @@ class FundedInvoice(BaseModel):
     transaction_ref: str
 
 
-
 class NewLoanParams(CamelModel):
     loan_id: str
     borrower_info: str
@@ -71,9 +70,11 @@ class AssetLog(CamelModel):
     # TODO maybe add more here?
     data: Dict
 
+
 class CreditProfile(CamelModel):
     loan_state: str
     active_loan: int
+
 
 class ProfileUpdate(CreditProfile):
     user_address: str
