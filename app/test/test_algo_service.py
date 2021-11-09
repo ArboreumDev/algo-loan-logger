@@ -123,6 +123,13 @@ def test_init_check():
             "LOCAL",
         )
 
+def test_testnet_config():
+    get_algo_client(node="TESTNET")
+
+
+def test_mainnet_config():
+    get_algo_client(node="MAINNET")
+
 
 def test_asset_creation(algo: AlgoService):
     ret = algo.create_new_asset(input=TEST_ASSET)

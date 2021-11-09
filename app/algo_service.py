@@ -45,6 +45,7 @@ class AlgoService:
         self.master_account = UnlockedAccount(
             public_key=mnemonic.to_public_key(master_mnemonic), private_key=mnemonic.to_private_key(master_mnemonic)
         )
+        print('master account', self.master_account.public_key)
         self.clawback_account = self.master_account
         self.profile_contract_id = profile_contract_id
 
@@ -52,6 +53,7 @@ class AlgoService:
         global_master_state = read_global_state(self.algod_client, self.master_account.public_key, profile_contract_id)
         if not check_registrar_field_match(global_master_state, self.master_account.public_key):
             raise AssertionError("master-account is not registered as registrar of profile app")
+        print(f"successfully connected to {self.net} @ {algod_address}")
 
     def create_new_asset(self, input: NewLogAssetInput):
         # Get network params for transactions before every transaction.
@@ -214,7 +216,7 @@ def get_algo_client(node=".env-defined"):
     - '.env': whatever values are set in .env
     - or one of
         - "TESTNET" (public), via node on purestake API
-        - "MAINNET" (public), TODO
+        - "MAINNET" (public), via node on purestake API
         - "LOCAL" started by algod/infrastructure with goal client
         - "SANDBOX" docker container
     """
@@ -285,9 +287,5 @@ def get_algo_client(node=".env-defined"):
         return AlgoService(
             algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, connect_to
         )
-
-
-        raise NotImplementedError("mainnet not configured yet")
-
     else:
         raise NotImplementedError(f"blockchain {node} unknown")
