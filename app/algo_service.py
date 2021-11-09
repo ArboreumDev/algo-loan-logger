@@ -276,6 +276,17 @@ def get_algo_client(node=".env-defined"):
         )
 
     elif connect_to == "MAINNET":
+        # testnet access via https://developer.purestake.io/
+        algod_address = os.getenv("MAINNET_PURESTAKE_ALGOD")
+        algod_token = os.getenv("PURESTAKE_TOKEN")
+        master_mnemonic = os.getenv("MAINNET_MNEMONIC")
+        profile_contract_id = int(os.getenv("MAINNET_PROFILE_CONTRACT_ID"))
+
+        return AlgoService(
+            algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, connect_to
+        )
+
+
         raise NotImplementedError("mainnet not configured yet")
 
     else:
