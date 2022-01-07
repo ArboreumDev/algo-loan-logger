@@ -56,6 +56,7 @@ def print_asset_holding(algodclient, account, assetid):
             print(json.dumps(scrutinized_asset, indent=4))
             break
 
+
 #   Utility function used to print asset holding for account and assetid
 def get_asset_holding(algodclient, account, assetid):
     # note: if you have an indexer instance available it is easier to just use this
@@ -264,7 +265,7 @@ def check_registrar_field_match(global_state: Dict, registrar_address: str):
             else:
                 return False
     except Exception as e:
-        print('error', e)
+        print("error", e)
         return False
 
 

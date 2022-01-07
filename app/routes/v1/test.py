@@ -1,10 +1,8 @@
-
 from test.test_helpers import opt_in_to_app, opt_out_of_app
 
 from algo_service import AlgoService, get_algo_client
-from algosdk import mnemonic
-from algosdk import account
-from fastapi import APIRouter, Depends, Body
+from algosdk import account, mnemonic
+from fastapi import APIRouter, Body, Depends
 from utils.types import CamelModel, UnlockedAccount
 from utils.utils import get_asset_holding
 
@@ -38,20 +36,14 @@ def _create_new_and_opt_in(algo: AlgoService = Depends(get_algo_service)):
 
 
 @test_app.get("/optOut/profile/{address}", tags=["profile"])
-def _opt_out(
-        address: str, 
-        passphrase: str = Body(..., embed=True),
-        algo: AlgoService = Depends(get_algo_service)
-    ):
+def _opt_out(address: str, passphrase: str = Body(..., embed=True), algo: AlgoService = Depends(get_algo_service)):
 
     return opt_out_of_app(
-        algo.algod_client, 
-        UnlockedAccount(
-            public_key=address,
-            private_key=mnemonic.to_private_key(passphrase)
-        ),
-        algo.profile_contract_id
+        algo.algod_client,
+        UnlockedAccount(public_key=address, private_key=mnemonic.to_private_key(passphrase)),
+        algo.profile_contract_id,
     )
+
 
 @test_app.get("/balance/{asset_id}/{address}", tags=["balance"])
 def get_asset_balance(asset_id: int, address: str, algo: AlgoService = Depends(get_algo_service)):

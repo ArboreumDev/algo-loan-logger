@@ -1,8 +1,8 @@
-from typing import Dict, List
+from typing import Dict
 
 from algo_service import AlgoService, get_algo_client
 from fastapi import APIRouter, Depends
-from utils.types import AssetLog, CamelModel, NewLogAssetInput
+from utils.types import CamelModel
 
 admin_app = APIRouter()
 
@@ -14,7 +14,6 @@ class AssetTxResponse(CamelModel):
 
 def get_algo_service():
     return get_algo_client(node=".env-defined")
-
 
 
 @admin_app.post("/clawback/{asset_id}/{receiver_address}", response_model=AssetTxResponse, tags=["admin"])

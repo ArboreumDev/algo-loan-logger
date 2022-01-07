@@ -2,7 +2,7 @@ import json
 import os
 from test.fixtures import accounts
 from test.test_helpers import (has_opted_in_to_app, opt_in_to_app,
-                               opt_out_of_app, opt_in_to_asset)
+                               opt_in_to_asset, opt_out_of_app)
 from typing import Dict, Tuple
 
 import pytest
@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 from utils.types import (AssetLog, CreditProfile, InvalidAssetIDException,
                          NewLoanParams, NewLogAssetInput, ProfileUpdate,
                          UnlockedAccount)
-from utils.utils import (call_app, get_arc3_nft_metadata, get_note_from_tx,
-                         get_object_from_note, read_local_state, get_asset_holding)
+from utils.utils import (call_app, get_arc3_nft_metadata, get_asset_holding,
+                         get_note_from_tx, get_object_from_note,
+                         read_local_state)
 
 load_dotenv()
 
@@ -77,9 +78,9 @@ def borrower_ready(algo: AlgoService):
 
 @pytest.fixture(scope="session")
 def test_asset(algo: AlgoService) -> Tuple[AlgoService, int, Dict]:
-    ret = algo.create_new_asset( input=TEST_ASSET)
-    asset_info = algo.get_created_asset(ret['asset_id'])
-    return algo, ret['asset_id'], asset_info
+    ret = algo.create_new_asset(input=TEST_ASSET)
+    asset_info = algo.get_created_asset(ret["asset_id"])
+    return algo, ret["asset_id"], asset_info
 
     # if you know a local asset id and haven't restarted the network, use this line to speed up tests
     # 105 -> non-frozen nft owned by master account
@@ -127,6 +128,7 @@ def test_init_check():
             valid_profile_contract_id,
             "LOCAL",
         )
+
 
 def test_testnet_config():
     get_algo_client(node="TESTNET")
@@ -240,12 +242,9 @@ def test_clawback_transfer(test_asset: Tuple[AlgoService, int, Dict]):
     opt_in_to_asset(algo, LENDER, asset_id)
 
     balance_before = get_asset_holding(algo.algod_client, LENDER.public_key, asset_id)
-    assert balance_before['amount'] == 0
+    assert balance_before["amount"] == 0
 
-    tx = algo.clawback_asset_transfer(asset_id, LENDER.public_key)
+    algo.clawback_asset_transfer(asset_id, LENDER.public_key)
 
     balance_after = get_asset_holding(algo.algod_client, LENDER.public_key, asset_id)
-    assert balance_after['amount'] == 1
-
-
-
+    assert balance_after["amount"] == 1

@@ -45,7 +45,7 @@ class AlgoService:
         self.master_account = UnlockedAccount(
             public_key=mnemonic.to_public_key(master_mnemonic), private_key=mnemonic.to_private_key(master_mnemonic)
         )
-        print('master account', self.master_account.public_key)
+        print("master account", self.master_account.public_key)
         self.clawback_account = self.master_account
         self.profile_contract_id = profile_contract_id
 
@@ -152,8 +152,8 @@ class AlgoService:
         """
         if asset_id not in self.get_created_assets():
             raise InvalidAssetIDException(f"assetId {asset_id} not known")
-        
-        log = { 'purpose': 'investor claims token' }
+
+        log = {"purpose": "investor claims token"}
 
         # create note with app-prefix according to note-field-conventions
         note = (APP_PREFIX + json.dumps(log)).encode()
