@@ -21,7 +21,7 @@ def get_algo_service():
     return get_algo_client(node=".env-defined")
 
 
-@profile_app.post("/profile/new", response_model=NewProfileResponse, tags=["log"])
+@profile_app.post("/profile/new", response_model=NewProfileResponse, tags=["profile"])
 def _create_new_profile(input: ProfileUpdate, algo: AlgoService = Depends(get_algo_service)):
     success, msg = algo.create_new_profile(input)
     if success:
@@ -30,7 +30,7 @@ def _create_new_profile(input: ProfileUpdate, algo: AlgoService = Depends(get_al
         raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=f"Profile could not be created: {str(msg)}")
 
 
-@profile_app.post("/profile/update", response_model=ProfileUpdateResponse, tags=["log"])
+@profile_app.post("/profile/update", response_model=ProfileUpdateResponse, tags=["profile"])
 def _update_profile(
     update: ProfileUpdate,
     # update: ProfileUpdate = Body(..., embed=True),
@@ -39,6 +39,6 @@ def _update_profile(
     return ProfileUpdateResponse(**algo.update_profile(update))
 
 
-@profile_app.get("/profile/optIn/status/{address}", response_model=List[Dict], tags=["log"])
+@profile_app.get("/profile/optIn/status/{address}", response_model=List[Dict], tags=["profile"])
 def _is_opted_in(address: str, algo: AlgoService = Depends(get_algo_service)):
     return has_opted_in_to_app(algo.algod_client, address, algo.profile_contract_id)

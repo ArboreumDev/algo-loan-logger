@@ -145,6 +145,38 @@ class AlgoService:
         tx_result = wait_for_confirmation(self.algod_client, txid)
         return {"tx_id": txid, "data": tx_result}
 
+    def clawback_asset_transfer(self, asset_id, target_address: str):
+        """
+        sending the token from the current holder to a new target
+        eg, when the investor wants to hold the token themself
+        """
+        if asset_id not in self.get_created_assets():
+            raise InvalidAssetIDException(f"assetId {asset_id} not known")
+        
+        log = { 'purpose': 'investor claims token' }
+
+        # create note with app-prefix according to note-field-conventions
+        note = (APP_PREFIX + json.dumps(log)).encode()
+
+        # TODO parameterize this:
+        token_holder = self.master_account.public_key
+
+        params = self.algod_client.suggested_params()
+        txn = AssetTransferTxn(
+            sender=self.clawback_account.public_key,
+            sp=params,
+            receiver=target_address,
+            revocation_target=token_holder,
+            amt=1,
+            index=asset_id,
+            note=note,
+        )
+
+        stxn = txn.sign(self.clawback_account.private_key)
+        txid = self.algod_client.send_transaction(stxn)
+        tx_result = wait_for_confirmation(self.algod_client, txid)
+        return {"tx_id": txid, "data": tx_result}
+
     def create_opt_in_tx(self, asset_id: int, address: str):
         params = self.algod_client.suggested_params()
         txn = AssetTransferTxn(sender=address, sp=params, receiver=address, amt=0, index=asset_id)

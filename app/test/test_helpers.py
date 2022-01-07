@@ -14,7 +14,6 @@ def has_opted_in_to_asset(client: any, user_address: str, asset_id: int):
     results = client.account_info(user_address)
     return asset_id in [a["asset-id"] for a in results["assets"]]
 
-
 def opt_out_of_app(client: any, unlocked_account: UnlockedAccount, app_id: int):
     # Get node suggested parameters
     params = client.suggested_params()
@@ -37,3 +36,10 @@ def opt_in_to_app(algo: AlgoService, unlocked_account: UnlockedAccount, app_id: 
     unsigned_tx = encoding.future_msgpack_decode(unsigned_encoded_tx)
     # sign & send
     return sign_and_send_tx(algo.algod_client, unsigned_tx, unlocked_account.private_key)
+
+def opt_in_to_asset(algo: AlgoService, unlocked_account: UnlockedAccount, asset_id: int):
+    unsigned_encoded_tx = algo.create_opt_in_tx(asset_id, unlocked_account.public_key)
+    unsigned_tx = encoding.future_msgpack_decode(unsigned_encoded_tx)
+    # sign & send
+    return sign_and_send_tx(algo.algod_client, unsigned_tx, unlocked_account.private_key)
+
