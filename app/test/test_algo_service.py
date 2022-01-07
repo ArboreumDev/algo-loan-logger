@@ -2,7 +2,7 @@ import json
 import os
 from test.fixtures import accounts
 from test.test_helpers import (has_opted_in_to_app, opt_in_to_app,
-                               opt_out_of_app)
+                               opt_in_to_asset, opt_out_of_app)
 from typing import Dict, Tuple
 
 import pytest
@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 from utils.types import (AssetLog, CreditProfile, InvalidAssetIDException,
                          NewLoanParams, NewLogAssetInput, ProfileUpdate,
                          UnlockedAccount)
-from utils.utils import (call_app, get_arc3_nft_metadata, get_note_from_tx,
-                         get_object_from_note, read_local_state)
+from utils.utils import (call_app, get_arc3_nft_metadata, get_asset_holding,
+                         get_note_from_tx, get_object_from_note,
+                         read_local_state)
 
 load_dotenv()
 
@@ -35,10 +36,15 @@ TEST_ASSET = NewLogAssetInput(
 )
 
 BORROWER_SECRET = accounts["borrower"]["mnemonic"]
+LENDER_SECRET = accounts["lender"]["mnemonic"]
 
 BORROWER = UnlockedAccount(
     public_key=mnemonic.to_public_key(BORROWER_SECRET), private_key=mnemonic.to_private_key(BORROWER_SECRET)
 )
+LENDER = UnlockedAccount(
+    public_key=mnemonic.to_public_key(LENDER_SECRET), private_key=mnemonic.to_private_key(LENDER_SECRET)
+)
+
 
 NEW_PROFILE = ProfileUpdate(user_address=BORROWER.public_key, active_loan=1, loan_state="live")
 
@@ -72,16 +78,16 @@ def borrower_ready(algo: AlgoService):
 
 @pytest.fixture(scope="session")
 def test_asset(algo: AlgoService) -> Tuple[AlgoService, int, Dict]:
-    # ret = algo.create_new_asset( input=TEST_ASSET)
-    # asset_info = algo.get_created_asset(ret['asset_id'])
-    # return algo, ret['asset_id'], asset_info
+    ret = algo.create_new_asset(input=TEST_ASSET)
+    asset_info = algo.get_created_asset(ret["asset_id"])
+    return algo, ret["asset_id"], asset_info
 
     # if you know a local asset id and haven't restarted the network, use this line to speed up tests
     # 105 -> non-frozen nft owned by master account
     # 160 -> frozen nft owned by master account, master-account is clawback
-    local_asset_id = 160
-    asset_info = algo.get_created_asset(local_asset_id)
-    return algo, local_asset_id, asset_info
+    # local_asset_id = 160
+    # asset_info = algo.get_created_asset(local_asset_id)
+    # return algo, local_asset_id, asset_info
 
 
 def test_init_check():
@@ -122,6 +128,14 @@ def test_init_check():
             valid_profile_contract_id,
             "LOCAL",
         )
+
+
+def test_testnet_config():
+    get_algo_client(node="TESTNET")
+
+
+def test_mainnet_config():
+    get_algo_client(node="MAINNET")
 
 
 def test_asset_creation(algo: AlgoService):
@@ -220,3 +234,17 @@ def test_new_credit_profile_access_restrictions(borrower_ready: Tuple[AlgoServic
 def test_change_profile(algo: AlgoService):
     # only creator can create write profile for user
     pass
+
+
+def test_clawback_transfer(test_asset: Tuple[AlgoService, int, Dict]):
+    algo, asset_id, _ = test_asset
+
+    opt_in_to_asset(algo, LENDER, asset_id)
+
+    balance_before = get_asset_holding(algo.algod_client, LENDER.public_key, asset_id)
+    assert balance_before["amount"] == 0
+
+    algo.clawback_asset_transfer(asset_id, LENDER.public_key)
+
+    balance_after = get_asset_holding(algo.algod_client, LENDER.public_key, asset_id)
+    assert balance_after["amount"] == 1

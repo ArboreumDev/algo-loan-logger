@@ -37,3 +37,10 @@ def opt_in_to_app(algo: AlgoService, unlocked_account: UnlockedAccount, app_id: 
     unsigned_tx = encoding.future_msgpack_decode(unsigned_encoded_tx)
     # sign & send
     return sign_and_send_tx(algo.algod_client, unsigned_tx, unlocked_account.private_key)
+
+
+def opt_in_to_asset(algo: AlgoService, unlocked_account: UnlockedAccount, asset_id: int):
+    unsigned_encoded_tx = algo.create_opt_in_tx(asset_id, unlocked_account.public_key)
+    unsigned_tx = encoding.future_msgpack_decode(unsigned_encoded_tx)
+    # sign & send
+    return sign_and_send_tx(algo.algod_client, unsigned_tx, unlocked_account.private_key)

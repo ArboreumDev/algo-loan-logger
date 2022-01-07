@@ -45,6 +45,7 @@ class AlgoService:
         self.master_account = UnlockedAccount(
             public_key=mnemonic.to_public_key(master_mnemonic), private_key=mnemonic.to_private_key(master_mnemonic)
         )
+        print("master account", self.master_account.public_key)
         self.clawback_account = self.master_account
         self.profile_contract_id = profile_contract_id
 
@@ -52,6 +53,7 @@ class AlgoService:
         global_master_state = read_global_state(self.algod_client, self.master_account.public_key, profile_contract_id)
         if not check_registrar_field_match(global_master_state, self.master_account.public_key):
             raise AssertionError("master-account is not registered as registrar of profile app")
+        print(f"successfully connected to {self.net} @ {algod_address}")
 
     def create_new_asset(self, input: NewLogAssetInput):
         # Get network params for transactions before every transaction.
@@ -143,6 +145,38 @@ class AlgoService:
         tx_result = wait_for_confirmation(self.algod_client, txid)
         return {"tx_id": txid, "data": tx_result}
 
+    def clawback_asset_transfer(self, asset_id, target_address: str):
+        """
+        sending the token from the current holder to a new target
+        eg, when the investor wants to hold the token themself
+        """
+        if asset_id not in self.get_created_assets():
+            raise InvalidAssetIDException(f"assetId {asset_id} not known")
+
+        log = {"purpose": "investor claims token"}
+
+        # create note with app-prefix according to note-field-conventions
+        note = (APP_PREFIX + json.dumps(log)).encode()
+
+        # TODO parameterize this:
+        token_holder = self.master_account.public_key
+
+        params = self.algod_client.suggested_params()
+        txn = AssetTransferTxn(
+            sender=self.clawback_account.public_key,
+            sp=params,
+            receiver=target_address,
+            revocation_target=token_holder,
+            amt=1,
+            index=asset_id,
+            note=note,
+        )
+
+        stxn = txn.sign(self.clawback_account.private_key)
+        txid = self.algod_client.send_transaction(stxn)
+        tx_result = wait_for_confirmation(self.algod_client, txid)
+        return {"tx_id": txid, "data": tx_result}
+
     def create_opt_in_tx(self, asset_id: int, address: str):
         params = self.algod_client.suggested_params()
         txn = AssetTransferTxn(sender=address, sp=params, receiver=address, amt=0, index=asset_id)
@@ -214,7 +248,7 @@ def get_algo_client(node=".env-defined"):
     - '.env': whatever values are set in .env
     - or one of
         - "TESTNET" (public), via node on purestake API
-        - "MAINNET" (public), TODO
+        - "MAINNET" (public), via node on purestake API
         - "LOCAL" started by algod/infrastructure with goal client
         - "SANDBOX" docker container
     """
@@ -276,7 +310,14 @@ def get_algo_client(node=".env-defined"):
         )
 
     elif connect_to == "MAINNET":
-        raise NotImplementedError("mainnet not configured yet")
+        # testnet access via https://developer.purestake.io/
+        algod_address = os.getenv("MAINNET_PURESTAKE_ALGOD")
+        algod_token = os.getenv("PURESTAKE_TOKEN")
+        master_mnemonic = os.getenv("MAINNET_MNEMONIC")
+        profile_contract_id = int(os.getenv("MAINNET_PROFILE_CONTRACT_ID"))
 
+        return AlgoService(
+            algod_address, algod_token, indexer_token, indexer_address, master_mnemonic, profile_contract_id, connect_to
+        )
     else:
         raise NotImplementedError(f"blockchain {node} unknown")
